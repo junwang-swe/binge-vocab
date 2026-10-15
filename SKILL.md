@@ -21,12 +21,13 @@ description: 追劇學英語 / Learn English vocabulary from TV series. 用戶�
      - 中級，日常對話大致能懂，看劇要靠字幕 → `B1`（預設）
      - 中高級，看劇多半聽得懂，想補表達與習語 → `B2`
      - 進階，想學道地用法與細微差異 → `C1`
+     - 接近母語，連罕見詞、文學或專業用語都想學 → `C2`
    - **想不想學俚語/粗話**（只用於「聽得懂」）：不要 → `none`；少量 → `few`（預設）；多一點 → `many`。
    - （選配）**每集想學幾個詞**，預設 30。
 2. 執行（`{skill_dir}` 為本檔所在目錄），把答案帶進參數：
 
 ```bash
-python3 {skill_dir}/setup.py --notes-dir <資料夾> --set native_language=<語言> --set level=<A2|B1|B2|C1> --set slang=<none|few|many> --set words_per_episode=<數字>
+python3 {skill_dir}/setup.py --notes-dir <資料夾> --set native_language=<語言> --set level=<A2|B1|B2|C1|C2> --set slang=<none|few|many> --set words_per_episode=<數字>
 ```
 
 它會建立 venv、安裝 genanki 與 gTTS、產生 `config.md`、建立資料夾並自我檢查。失敗時把錯誤原因用白話告訴用戶並處理（例如沒有 Python 3 就請用戶先安裝），不要丟一串英文錯誤就結束。
@@ -40,7 +41,7 @@ python3 {skill_dir}/setup.py --notes-dir <資料夾> --set native_language=<語�
 ```markdown
 notes_dir: ~/Documents/series-vocab/
 native_language: 繁體中文
-level: B1            # A2 / B1 / B2 / C1
+level: B1            # A2 / B1 / B2 / C1 / C2
 slang: few           # none / few / many
 words_per_episode: 30
 ```
@@ -140,7 +141,7 @@ curl -sL "https://www.springfieldspringfield.co.uk/view_episode_scripts.php?tv-s
 1. **Phrasal verbs**：get away with、pull off、cut it out 這類動詞短語
 2. **習語和固定搭配**：字面意思和實際意思不同的表達
 3. **俚語/口語**：字典查不到準確語境的詞
-4. **B1-B2 級實用詞彙**：跳過 hello、sorry 等基礎詞，但真實場景高頻出現
+4. **符合用戶程度的實用詞彙**（難度範圍見下方 `level` 對照表）：跳過 hello、sorry 等基礎詞，但真實場景高頻出現
 
 ### 3. 難度與時效過濾（依 `config.md` 的 `level`、`slang`）
 
@@ -152,6 +153,7 @@ curl -sL "https://www.springfieldspringfield.co.uk/view_episode_scripts.php?tv-s
 | B1（預設） | B1-B2 | A2 只收實用短語動詞和習語 | 2 |
 | B2 | B2-C1 | B1 只收容易誤用的習語 | 6 |
 | C1 | C1 | C2 只收高頻、道地的用法 | 不限 |
+| C2 | C1-C2 | B2 以下一律不收 | 不限 |
 
 沒有 `level` 時當作 B1-B2 為主、C1 上限 3。`config.md` 有 `c1_max_per_episode` 時以它為準。
 

@@ -42,7 +42,7 @@ FIELDS = ["Key", "Word", "Context", "FrontContext", "Back"]
 MODEL_ID = 1760283519001  # 固定值：重複匯入時 Anki 認得是同一個筆記類型
 MODEL_NAME = "BingeVocab"
 # 依程度 / 俚語偏好換算每集上限（config.md 可用 c1_max_per_episode、slang_max_per_episode 直接覆寫）
-LEVEL_C1_CAP = {"A2": 0, "B1": 2, "B2": 6, "C1": 99}
+LEVEL_C1_CAP = {"A2": 0, "B1": 2, "B2": 6, "C1": 99, "C2": 99}
 SLANG_CAP = {"none": 0, "few": 3, "many": 8}
 
 

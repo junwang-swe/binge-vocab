@@ -26,7 +26,7 @@
 2. **先問用戶**（一次問完，每題附預設，用戶說「都用預設」就全用預設）：
    - 資料存哪個資料夾（預設 `~/Documents/series-vocab/`）
    - 釋義語言（預設繁體中文）
-   - 目前英文程度（用白話選項，不要問 CEFR 代號）：剛入門 → `A2`；中級、看劇要靠字幕 → `B1`；中高級、多半聽得懂 → `B2`；進階 → `C1`
+   - 目前英文程度（用白話選項，不要問 CEFR 代號）：剛入門 → `A2`；中級、看劇要靠字幕 → `B1`；中高級、多半聽得懂 → `B2`；進階 → `C1`；接近母語、想學罕見詞 → `C2`
    - 想不想學俚語：不要 `none` / 少量 `few` / 多一點 `many`
    - 每集想學幾個詞（預設 30）
 3. 執行 `python3 setup.py --notes-dir <資料夾> --set native_language=<語言> --set level=<程度> --set slang=<偏好> --set words_per_episode=<數字>`（會建 venv、裝 genanki 與 gTTS、寫入 `config.md`）。
@@ -107,7 +107,7 @@ Anki 預設每天只出 **20 張**新卡，一集約 30 張就要分兩天才出
 |---|---|---|
 | `notes_dir` | `~/Documents/series-vocab/` | 詞庫與牌組檔存放位置，Obsidian 用戶可填 vault 內路徑 |
 | `native_language` | 繁體中文 | 釋義與譯文語言 |
-| `level` | B1 | 你的英文程度：A2 入門 / B1 中級 / B2 中高級 / C1 進階；選詞難度會略高於此 |
+| `level` | B1 | 你的英文程度：A2 入門 / B1 中級 / B2 中高級 / C1 進階 / C2 接近母語；選詞難度會略高於此 |
 | `slang` | few | 俚語：`none` 不要 / `few` 少量 / `many` 多一點 |
 | `words_per_episode` | 30 | 每集詞數 |
 
