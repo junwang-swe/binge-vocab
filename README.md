@@ -8,25 +8,38 @@
 
 你需要：
 
-- 一個能執行指令的 AI agent（例如 [Claude Code](https://claude.com/claude-code)）
+- 一個在你電腦上執行的 AI agent（例如 [Claude Code](https://claude.com/claude-code) 桌面版或 CLI）
 - [Anki](https://apps.ankiweb.net/)（用來背卡片，先下載安裝）
 
-然後對你的 AI 說這一句，它會自己完成全部安裝：
+對你的 AI 貼上這段，它會安裝、問你幾個問題，然後直接帶你跑第一集，不用重開：
 
 ```
-請幫我安裝這個英文學習 skill：https://github.com/heartwar9420/binge-vocab
-把它放進你的 skills 目錄，然後執行裡面的 setup.py 完成設定。
+請幫我安裝並開始使用這個英文學習 skill：https://github.com/heartwar9420/binge-vocab
+請照 README 的「給 AI 的安裝指引」做：先問我英文程度等設定，裝好後不要叫我重開，直接問我想學哪部劇的哪一集。
 ```
 
-AI 會下載、安裝套件、建立設定檔，並問你資料要存在哪裡（不確定就用預設）。完成後直接進入下面的「使用方式」。
+### 給 AI 的安裝指引
+
+（以下是寫給 AI agent 的步驟，用戶不需要看。）
+
+1. 把 repo clone 到 skills 目錄（Claude Code 為 `~/.claude/skills/binge-vocab`；其他 agent 放它的 skills 目錄）。
+2. **先問用戶**（一次問完，每題附預設，用戶說「都用預設」就全用預設）：
+   - 資料存哪個資料夾（預設 `~/Documents/series-vocab/`）
+   - 釋義語言（預設繁體中文）
+   - 目前英文程度（用白話選項，不要問 CEFR 代號）：剛入門 → `A2`；中級、看劇要靠字幕 → `B1`；中高級、多半聽得懂 → `B2`；進階 → `C1`
+   - 想不想學俚語：不要 `none` / 少量 `few` / 多一點 `many`
+   - 每集想學幾個詞（預設 30）
+3. 執行 `python3 setup.py --notes-dir <資料夾> --set native_language=<語言> --set level=<程度> --set slang=<偏好> --set words_per_episode=<數字>`（會建 venv、裝 genanki 與 gTTS、寫入 `config.md`）。
+4. 提醒用戶先安裝 Anki。
+5. **不要叫用戶重開 session**：若 skill 還沒被載入，直接讀 `SKILL.md`，照裡面的流程處理用戶接下來的第一次請求；問用戶「想學哪部劇的哪一集？」並直接開始。
 
 <details>
 <summary>想自己手動安裝</summary>
 
 ```bash
-git clone https://github.com/heartwar9420/binge-vocab ~/.claude/skills/binge-vocab
+git clone https://github.com/heartwar9420/binge-vocab.git ~/.claude/skills/binge-vocab
 cd ~/.claude/skills/binge-vocab
-python3 setup.py --notes-dir ~/Documents/series-vocab/
+python3 setup.py --notes-dir ~/Documents/series-vocab/ --set level=B1 --set slang=few
 ```
 
 `setup.py` 可重複執行；不要發音音檔可加 `--no-audio`。

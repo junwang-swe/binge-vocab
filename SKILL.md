@@ -11,7 +11,7 @@ description: 追劇學英語 / Learn English vocabulary from TV series. 用戶�
 
 ## 首次使用（自動安裝）
 
-觸發時先檢查：skill 目錄下是否有 `config.md`，且 `~/.local/share/binge-vocab/venv` 存在。任一不存在就是第一次使用，**由你直接完成安裝，不要叫用戶自己下指令**：
+觸發時先檢查：skill 目錄下是否有 `config.md`、其中是否有 `level:` 這一行，且 `~/.local/share/binge-vocab/venv` 存在。任一不成立就是第一次使用（包含「已裝好但還沒設定程度」），**由你直接完成安裝，不要叫用戶自己下指令**：
 
 1. 用白話問用戶四個問題（一次問完，每題都附預設；用戶說「都用預設」就全用預設）：
    - **資料存哪個資料夾**（詞庫與牌組檔）。預設 `~/Documents/series-vocab/`；Obsidian 用戶可填 vault 內的路徑。
