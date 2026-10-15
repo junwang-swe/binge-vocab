@@ -147,11 +147,10 @@ def tts(text, out):
     if out.exists() and out.stat().st_size > 0:
         return True
     err = ""
-    for wait in (0, 20, 60, 120):
+    for wait in (0, 10, 30, 90):
         time.sleep(wait)
         try:
             gTTS(text, lang="en", tld="com").save(str(out))
-            time.sleep(0.8)
             return True
         except Exception as ex:  # gTTSError、網路錯誤等
             out.unlink(missing_ok=True)
@@ -163,13 +162,18 @@ def tts(text, out):
 
 
 def make_audio(show, ep, entries, media_dir):
+    """並行產生單字與原句音檔（預設 4 個執行緒，BINGE_TTS_WORKERS 可調；被限流時自動退避重試）。回傳兩個音檔都成功的詞。"""
+    from concurrent.futures import ThreadPoolExecutor
     media_dir.mkdir(parents=True, exist_ok=True)
-    ok = set()
+    jobs = []
     for e in entries:
         wf, sf = audio_names(show, ep, e["word"])
-        if tts(e["word"], media_dir / wf) and tts(plain(e["sentence"]), media_dir / sf):
-            ok.add(e["word"])
-    return ok
+        jobs += [(e["word"], e["word"], media_dir / wf), (e["word"], plain(e["sentence"]), media_dir / sf)]
+    workers = int(os.environ.get("BINGE_TTS_WORKERS", "4"))
+    with ThreadPoolExecutor(workers) as ex:
+        results = list(ex.map(lambda j: tts(j[1], j[2]), jobs))
+    failed = {j[0] for j, ok in zip(jobs, results) if not ok}
+    return {e["word"] for e in entries} - failed
 
 
 def card_fields(show, ep, e, has_audio):
