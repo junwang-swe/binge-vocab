@@ -4,21 +4,34 @@
 
 適用於 Claude Code，或任何支援自訂 skill 的 AI agent。不需要 API key。
 
-## 安裝
+## 安裝（交給 AI 就好）
 
-需要 Python 3、`curl`、[Anki](https://apps.ankiweb.net/)。
+你需要：
+
+- 一個能執行指令的 AI agent（例如 [Claude Code](https://claude.com/claude-code)）
+- [Anki](https://apps.ankiweb.net/)（用來背卡片，先下載安裝）
+
+然後對你的 AI 說這一句，它會自己完成全部安裝：
+
+```
+請幫我安裝這個英文學習 skill：<本 repo 網址>
+把它放進你的 skills 目錄，然後執行裡面的 setup.py 完成設定。
+```
+
+AI 會下載、安裝套件、建立設定檔，並問你資料要存在哪裡（不確定就用預設）。完成後直接進入下面的「使用方式」。
+
+<details>
+<summary>想自己手動安裝</summary>
 
 ```bash
 git clone <本 repo 網址> ~/.claude/skills/binge-vocab
 cd ~/.claude/skills/binge-vocab
-cp config.example.md config.md        # 編輯 notes_dir（詞庫與牌組檔的存放位置）
-
-python3 -m venv ~/.local/share/binge-vocab/venv
-~/.local/share/binge-vocab/venv/bin/pip install genanki gTTS
+python3 setup.py --notes-dir ~/Documents/series-vocab/
 ```
 
-就這樣。不需要手動建立 Anki 筆記類型，第一次匯入牌組檔時會自動建立 `BingeVocab`。
-（只想要卡片、不要音檔：只裝 `genanki`，並對 AI 說「不要音檔」。）
+`setup.py` 可重複執行；不要發音音檔可加 `--no-audio`。
+
+</details>
 
 ## 使用方式
 

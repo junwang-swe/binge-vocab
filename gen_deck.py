@@ -35,7 +35,8 @@ import time
 from pathlib import Path
 
 SKILL_DIR = Path(__file__).resolve().parent
-VENV_PY = Path(os.environ.get("BINGE_PYTHON") or Path.home() / ".local/share/binge-vocab/venv/bin/python")
+_VENV = Path.home() / ".local/share/binge-vocab/venv"
+VENV_PY = Path(os.environ.get("BINGE_PYTHON") or _VENV / ("Scripts/python.exe" if sys.platform == "win32" else "bin/python"))
 REQUIRED = ("word", "level", "def", "sentence", "zh")
 FIELDS = ["Key", "Word", "Context", "FrontContext", "Back"]
 MODEL_ID = 1760283519001  # 固定值：重複匯入時 Anki 認得是同一個筆記類型
@@ -54,10 +55,8 @@ def ensure_deps(need_audio):
     if os.environ.get("BINGE_REEXEC") != "1" and VENV_PY.exists():
         os.environ["BINGE_REEXEC"] = "1"
         os.execv(str(VENV_PY), [str(VENV_PY), "-W", "ignore", str(Path(__file__).resolve()), *sys.argv[1:]])
-    sys.exit("缺少 genanki / gTTS。請執行：\n"
-             "  python3 -m venv ~/.local/share/binge-vocab/venv\n"
-             "  ~/.local/share/binge-vocab/venv/bin/pip install genanki gTTS\n"
-             "（不需要音檔可只裝 genanki 並加 --no-audio；也可用 BINGE_PYTHON 指定已裝好的 python）")
+    sys.exit("缺少 genanki / gTTS。請執行：python3 setup.py\n"
+             "（不需要音檔可加 --no-audio 安裝；也可用 BINGE_PYTHON 指定已裝好的 python）")
 
 
 def read_config():

@@ -9,14 +9,21 @@ description: 追劇學英語 / Learn English vocabulary from TV series. 用戶�
 
 ---
 
-## 首次使用（配置）
+## 首次使用（自動安裝）
 
-skill 目錄下沒有 `config.md` 時，先確認以下配置並寫入 `config.md`：
+觸發時先檢查：skill 目錄下是否有 `config.md`，且 `~/.local/share/binge-vocab/venv` 存在。任一不存在就是第一次使用，**由你直接完成安裝，不要叫用戶自己下指令**：
 
-1. **資料保存目錄**（`notes_dir`）：預設 `~/Documents/series-vocab/`；Obsidian 用戶可填 vault 內的路徑
-2. **釋義語言**（`native_language`）：預設繁體中文
+1. 問用戶一件事：資料要存哪個資料夾（詞庫與牌組檔）。用戶沒意見就用預設 `~/Documents/series-vocab/`；Obsidian 用戶可填 vault 內的路徑。
+2. 執行（`{skill_dir}` 為本檔所在目錄）：
 
-可直接複製範本：`cp config.example.md config.md`。格式：
+```bash
+python3 {skill_dir}/setup.py --notes-dir <用戶選的資料夾>
+```
+
+它會建立 venv、安裝 genanki 與 gTTS、產生 `config.md`、建立資料夾並自我檢查。失敗時把錯誤原因用白話告訴用戶並處理（例如沒有 Python 3 就請用戶先安裝），不要丟一串英文錯誤就結束。
+3. 提醒用戶一次：還沒安裝 Anki 的話，請先到 https://apps.ankiweb.net/ 下載。
+
+`config.md` 可調整的欄位（皆有預設值）：
 
 ```markdown
 notes_dir: ~/Documents/series-vocab/
