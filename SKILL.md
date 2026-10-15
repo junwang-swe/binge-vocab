@@ -176,6 +176,22 @@ python3 -I {skill_dir}/gen_deck.py data.json --open      # 通過後寫入，並
 
 腳本會：從 `config.md` 取 `{notes_dir}`；檢查重複詞、已學詞、缺 `**` 標記、同一原句重複（硬性錯誤，出錯就中止且不寫任何檔案）；對 C1 / 俚語超過上限、詞數偏離 `words_per_episode` 發出警告；產生美音發音音檔（gTTS，單字與原句各一個 mp3；正面自動播單字、背面自動播原句；個別音檔失敗只警告，該卡退回無音檔；`--no-audio` 可略過）；把筆記類型 `BingeVocab`、全部卡片與音檔打成 `{notes_dir}/{劇名}/Anki/{劇名slug}-{sxxexx}.apkg`（牌組 `追劇英語::{劇名}::{SxxExx}`，重複匯入會更新同一批卡片、保留複習進度）；`--open` 會用系統預設程式開啟該檔，Anki 自動跳出匯入視窗；把詞條（小寫）併入 `{notes_dir}/learned_vocab.md` 並更新 `updated:` 日期。
 
+### 一次處理多集（批次）
+
+用戶一次給多集（如「追劇學英語 Stranger Things S01E01–S01E10」）時：
+
+1. 依序對每一集走第一、二步，每集各寫一個 JSON（如 `ep01.json`、`ep02.json`…）。選詞時要避開**前面集數剛選的詞**，不要等腳本報錯才換。
+2. 全部 JSON 一次交給腳本，打包成單一 `.apkg`（每集一個子牌組），用戶只需匯入一次：
+
+```bash
+python3 -I {skill_dir}/gen_deck.py ep01.json ep02.json ep03.json --dry-run   # 全部先檢查
+python3 -I {skill_dir}/gen_deck.py ep01.json ep02.json ep03.json --open
+```
+
+- 任何一集有硬性錯誤，整批中止、不寫任何檔案；修正後整批重跑。
+- 輸出在 `{notes_dir}/batch/{時間}-{N}eps.apkg`。
+- 每集約 60 個音檔，10 集要幾分鐘，且可能被限流；腳本會自動重試，已產生的音檔下次會略過。
+
 ---
 
 ## 完成回覆格式

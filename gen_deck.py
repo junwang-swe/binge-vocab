@@ -2,7 +2,7 @@
 """binge-vocab 產生器：詞條 JSON -> Anki 牌組檔 .apkg（筆記類型、卡片、發音音檔打包成單一檔案）並更新 learned_vocab.md。
 
 用法：
-    python3 gen_deck.py DATA.json [--dry-run] [--no-audio] [--open] [--notes-dir DIR]
+    python3 gen_deck.py DATA.json [DATA2.json ...] [--dry-run] [--no-audio] [--open] [--notes-dir DIR]
 
 DATA.json 格式：
     {
@@ -19,6 +19,8 @@ DATA.json 格式：
 - 硬性錯誤（重複詞、已學詞、缺 ** 標記、欄位缺漏、同一原句重複）會中止且不寫任何檔案。
 - 軟性警告（C1 / 俚語超過上限、詞數偏離 words_per_episode）只提醒，仍會寫檔。
 - --open：產生後用系統預設程式開啟 .apkg（Anki 會自動跳出匯入視窗）。
+- 一次給多個 DATA.json（多集）：全部驗證通過才寫檔（後面的集數會把前面集數的詞視為已學、不可重複），
+  並打包成單一 .apkg（每集一個子牌組），一次匯入。
 
 依賴 genanki（與 gTTS）：skill 目錄之外的 venv，見 README；缺少時腳本會自動改用該 venv 的 python。
 """
@@ -185,10 +187,10 @@ def card_fields(show, ep, e, has_audio):
     return [f"{slug(show)}-{ep.lower()}-{slug(word)}", word, plain(s), front, back]
 
 
-def build_package(show, ep, entries, with_audio, media_dir):
+def make_model():
     import genanki
     anki = SKILL_DIR / "anki"
-    model = genanki.Model(
+    return genanki.Model(
         MODEL_ID, MODEL_NAME,
         fields=[{"name": n} for n in FIELDS],
         templates=[{"name": "Card 1",
@@ -197,6 +199,10 @@ def build_package(show, ep, entries, with_audio, media_dir):
         css=(anki / "style.css").read_text(encoding="utf-8"),
         sort_field_index=1,
     )
+
+
+def build_deck(model, show, ep, entries, with_audio, media_dir):
+    import genanki
     deck_name = f"追劇英語::{show}::{ep}"
     deck = genanki.Deck(int(hashlib.md5(deck_name.encode()).hexdigest()[:8], 16) + (1 << 30), deck_name)
     media = []
@@ -205,9 +211,7 @@ def build_package(show, ep, entries, with_audio, media_dir):
         deck.add_note(genanki.Note(model=model, fields=f, guid=genanki.guid_for(f[0])))
         if e["word"] in with_audio:
             media += [str(media_dir / n) for n in audio_names(show, ep, e["word"])]
-    pkg = genanki.Package(deck)
-    pkg.media_files = media
-    return pkg
+    return deck, media
 
 
 def update_vocab(path, lines, learned, entries, today):
@@ -244,7 +248,7 @@ def open_file(path):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("data")
+    ap.add_argument("data", nargs="+", help="一個或多個詞條 JSON（多集會打包成同一個 .apkg）")
     ap.add_argument("--dry-run", action="store_true", help="只檢查，不寫任何檔案")
     ap.add_argument("--no-audio", action="store_true", help="不產生發音音檔")
     ap.add_argument("--open", action="store_true", help="產生後用系統預設程式開啟 .apkg（Anki 會跳出匯入視窗）")
@@ -252,38 +256,61 @@ def main():
     a = ap.parse_args()
 
     import json
-    data = json.loads(Path(a.data).read_text(encoding="utf-8"))
-    show, ep, entries = data["show"], data["episode"], data["entries"]
+    episodes = []
+    for f in a.data:
+        d = json.loads(Path(f).read_text(encoding="utf-8"))
+        episodes.append((d["show"], d["episode"], d["entries"]))
     cfg = read_config()
     notes_dir = resolve_notes_dir(cfg, a.notes_dir)
     vocab_path = notes_dir / "learned_vocab.md"
     learned, vlines = load_learned(vocab_path)
 
-    errors, warns, (n, c1, slang) = validate(entries, learned, cfg)
-    for w in warns:
-        print(f"警告：{w}")
-    if errors:
-        for e in errors:
+    # 逐集驗證；前面集數的詞視為已學，後面集數不可重複
+    all_errors, seen = [], set(learned)
+    for show, ep, entries in episodes:
+        errors, warns, (n, c1, slang) = validate(entries, seen, cfg)
+        for w in warns:
+            print(f"警告（{show} {ep}）：{w}")
+        all_errors += [f"{show} {ep} {e}" for e in errors]
+        seen |= {e["word"].lower() for e in entries if str(e.get("word", "")).strip()}
+        print(f"{show} {ep}：{n} 個詞條（C1 以上 {c1}、俚語 {slang}）")
+    if all_errors:
+        for e in all_errors:
             print(f"錯誤：{e}")
-        sys.exit(f"共 {len(errors)} 個錯誤，已中止，未寫入任何檔案。")
-    print(f"檢查通過：{n} 個詞條（C1 以上 {c1}、俚語 {slang}）")
+        sys.exit(f"共 {len(all_errors)} 個錯誤，已中止，未寫入任何檔案。")
+    print("檢查通過")
     if a.dry_run:
         print("dry-run：未寫入任何檔案")
         return
 
     ensure_deps(need_audio=not a.no_audio)
+    import genanki
     today = datetime.date.today().isoformat()
-    anki_dir = notes_dir / show / "Anki"
-    anki_dir.mkdir(parents=True, exist_ok=True)
-    media_dir = anki_dir / "media"
-    with_audio = frozenset()
-    if not a.no_audio:
-        with_audio = make_audio(show, ep, entries, media_dir)
-        print(f"音檔：{len(with_audio)}/{len(entries)} 個詞條完成")
-    apkg = anki_dir / f"{slug(show)}-{ep.lower()}.apkg"
-    build_package(show, ep, entries, with_audio, media_dir).write_to_file(str(apkg))
-    print(f"Anki 牌組檔：{apkg}")
-    total = update_vocab(vocab_path, vlines, learned, entries, today)
+    model = make_model()
+    decks, media = [], []
+    for show, ep, entries in episodes:
+        media_dir = notes_dir / show / "Anki" / "media"
+        with_audio = frozenset()
+        if not a.no_audio:
+            with_audio = make_audio(show, ep, entries, media_dir)
+            print(f"音檔 {show} {ep}：{len(with_audio)}/{len(entries)} 個詞條完成")
+        deck, m = build_deck(model, show, ep, entries, with_audio, media_dir)
+        decks.append(deck)
+        media += m
+    if len(episodes) == 1:
+        show, ep, _ = episodes[0]
+        out_dir = notes_dir / show / "Anki"
+        apkg = out_dir / f"{slug(show)}-{ep.lower()}.apkg"
+    else:
+        out_dir = notes_dir / "batch"
+        apkg = out_dir / f"{datetime.datetime.now():%Y%m%d-%H%M%S}-{len(episodes)}eps.apkg"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    pkg = genanki.Package(decks)
+    pkg.media_files = media
+    pkg.write_to_file(str(apkg))
+    print(f"Anki 牌組檔：{apkg}（{len(decks)} 個牌組、{sum(len(e) for _, _, e in episodes)} 張卡）")
+    all_entries = [e for _, _, entries in episodes for e in entries]
+    total = update_vocab(vocab_path, vlines, learned, all_entries, today)
     print(f"歷史詞庫：{vocab_path}（現有 {total} 個）")
     if a.open:
         open_file(apkg)
