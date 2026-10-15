@@ -4,6 +4,10 @@
 
 適用於 Claude Code，或任何支援自訂 skill 的 AI agent。不需要 API key。
 
+![binge-vocab 示範：貼一句話，約 2 分鐘後 Anki 自動匯入 30 張卡片](assets/demo.gif)
+
+*示範：從貼上安裝句到 Anki 匯入視窗約 2 分鐘（含第一次安裝），中間的等待已快轉。*
+
 ## 安裝（交給 AI 就好）
 
 你需要：
