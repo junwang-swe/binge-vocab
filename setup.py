@@ -78,7 +78,7 @@ def main():
         print(f"  注意：venv 不在預設位置，使用前請設定環境變數 BINGE_PYTHON={py}")
     configured = re.search(r"^level:", cfg.read_text(encoding="utf-8"), re.M)
     if not configured:
-        print("\n【給 AI agent】config.md 還沒有 level（英文程度）。請先用白話問用戶程度、俚語偏好、每集詞數，"
+        print("\n【給 AI agent】config.md 還沒有 level（英文程度）。請立刻（不要先問用戶「要不要設定」）用白話問用戶程度、俚語偏好、每集詞數，"
               "再用 `python3 setup.py --set level=... --set slang=... --set words_per_episode=...` 寫入"
               "（問法見 SKILL.md「首次使用」）。")
     print("\n不需要重開 session：若 binge-vocab 尚未被載入，請直接讀取 SKILL.md 並照著處理用戶的第一次請求。")
