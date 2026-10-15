@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""binge-vocab 產生器：詞條 JSON -> Anki 匯入 CSV（含發音音檔）並更新 learned_vocab.md。
+"""binge-vocab 產生器：詞條 JSON -> Anki 牌組檔 .apkg（筆記類型、卡片、發音音檔打包成單一檔案）並更新 learned_vocab.md。
 
 用法：
-    python3 -I gen_csv.py DATA.json [--dry-run] [--notes-dir DIR]
+    python3 gen_deck.py DATA.json [--dry-run] [--no-audio] [--open] [--notes-dir DIR]
 
 DATA.json 格式：
     {
@@ -18,27 +18,44 @@ DATA.json 格式：
 - 詞已在 learned_vocab.md 時預設報錯；確屬「新語境/新用法」才在該詞條加 "new_context": true。
 - 硬性錯誤（重複詞、已學詞、缺 ** 標記、欄位缺漏、同一原句重複）會中止且不寫任何檔案。
 - 軟性警告（C1 / 俚語超過上限、詞數偏離 words_per_episode）只提醒，仍會寫檔。
+- --open：產生後用系統預設程式開啟 .apkg（Anki 會自動跳出匯入視窗）。
+
+依賴 genanki（與 gTTS）：skill 目錄之外的 venv，見 README；缺少時腳本會自動改用該 venv 的 python。
 """
 import argparse
-import csv
 import datetime
-import io
+import hashlib
 import os
 import re
-import shutil
 import subprocess
 import sys
 import time
 from pathlib import Path
 
 SKILL_DIR = Path(__file__).resolve().parent
+VENV_PY = Path(os.environ.get("BINGE_PYTHON") or Path.home() / ".local/share/binge-vocab/venv/bin/python")
 REQUIRED = ("word", "level", "def", "sentence", "zh")
-TTS_PY = Path(os.environ.get("BINGE_TTS_PYTHON") or Path.home() / ".local/share/binge-vocab/venv/bin/python")
-ANKI_MEDIA_GLOBS = (
-    "Library/Application Support/Anki2/*/collection.media",  # macOS
-    ".local/share/Anki2/*/collection.media",  # Linux
-    "AppData/Roaming/Anki2/*/collection.media",  # Windows
-)
+FIELDS = ["Key", "Word", "Context", "FrontContext", "Back"]
+MODEL_ID = 1760283519001  # 固定值：重複匯入時 Anki 認得是同一個筆記類型
+MODEL_NAME = "BingeVocab"
+
+
+def ensure_deps(need_audio):
+    """genanki / gTTS 不在目前的 python 時，改用 venv 的 python 重跑自己。"""
+    try:
+        import genanki  # noqa: F401
+        if need_audio:
+            import gtts  # noqa: F401
+        return
+    except ImportError:
+        pass
+    if os.environ.get("BINGE_REEXEC") != "1" and VENV_PY.exists():
+        os.environ["BINGE_REEXEC"] = "1"
+        os.execv(str(VENV_PY), [str(VENV_PY), "-W", "ignore", str(Path(__file__).resolve()), *sys.argv[1:]])
+    sys.exit("缺少 genanki / gTTS。請執行：\n"
+             "  python3 -m venv ~/.local/share/binge-vocab/venv\n"
+             "  ~/.local/share/binge-vocab/venv/bin/pip install genanki gTTS\n"
+             "（不需要音檔可只裝 genanki 並加 --no-audio；也可用 BINGE_PYTHON 指定已裝好的 python）")
 
 
 def read_config():
@@ -121,23 +138,23 @@ def audio_names(show, ep, word):
 
 
 def tts(text, out):
-    """用 gTTS（Google 美音）產 mp3；已存在就略過。失敗回 False，不中斷整批。"""
+    """用 gTTS（Google 美音）產 mp3；已存在就略過。被限流（429）自動退避重試，失敗回 False 不中斷整批。"""
+    from gtts import gTTS
     if out.exists() and out.stat().st_size > 0:
         return True
-    if not TTS_PY.exists():
-        sys.exit(f"找不到 gTTS 環境：{TTS_PY}。請 python3 -m venv ~/.local/share/binge-vocab/venv && "
-                 "~/.local/share/binge-vocab/venv/bin/pip install gTTS，或用 BINGE_TTS_PYTHON 指定已裝 gTTS 的 python，或加 --no-audio")
-    code = "import sys; from gtts import gTTS; gTTS(sys.argv[1], lang='en', tld='com').save(sys.argv[2])"
+    err = ""
     for wait in (0, 20, 60, 120):
         time.sleep(wait)
-        r = subprocess.run([str(TTS_PY), "-W", "ignore", "-c", code, text, str(out)], capture_output=True, text=True)
-        if r.returncode == 0 and out.exists() and out.stat().st_size > 0:
+        try:
+            gTTS(text, lang="en", tld="com").save(str(out))
             time.sleep(0.8)
             return True
-        out.unlink(missing_ok=True)
-        if "429" not in r.stderr:
-            break
-    print(f"音檔失敗：{text[:30]}（{r.stderr.strip()[-120:]}）")
+        except Exception as ex:  # gTTSError、網路錯誤等
+            out.unlink(missing_ok=True)
+            err = str(ex)
+            if "429" not in err:
+                break
+    print(f"音檔失敗：{text[:30]}（{err[-120:]}）")
     return False
 
 
@@ -151,44 +168,46 @@ def make_audio(show, ep, entries, media_dir):
     return ok
 
 
-def install_media(media_dir):
-    """把 mp3 複製進 Anki 的 collection.media；找不到 profile 就提示手動複製。"""
-    override = os.environ.get("BINGE_ANKI_MEDIA")
-    dests = [Path(override)] if override else [d for g in ANKI_MEDIA_GLOBS for d in Path.home().glob(g)]
-    if len(dests) != 1:
-        print(f"未能唯一定位 Anki collection.media（找到 {len(dests)} 個），請手動把 {media_dir} 內的 mp3 複製進去")
-        return
-    n = 0
-    for f in media_dir.glob("*.mp3"):
-        shutil.copy2(f, dests[0] / f.name)
-        n += 1
-    print(f"已複製 {n} 個音檔到 {dests[0]}")
+def card_fields(show, ep, e, has_audio):
+    word, lv, d, s, zh = (e[k] for k in REQUIRED)
+    hl = mark(s)
+    wf, sf = audio_names(show, ep, word)
+    wsnd = f"[sound:{wf}]" if has_audio else ""
+    ssnd = f'<div class="lookup-audio">[sound:{sf}]</div>' if has_audio else ""
+    front = (f'<div class="card-front"><div class="context-container"><div class="target-word-front">{word}</div>'
+             f'<div class="context-text">"{hl}"</div></div>{wsnd}</div>')
+    back = (f'<div class="lookup-card"><div class="lookup-card-inner"><div class="lookup-header">'
+            f'<div class="lookup-word">{word}</div></div>'
+            f'<div class="lookup-meta"><span class="lookup-part-of-speech">{lv}</span></div>'
+            f'<div class="lookup-definition">{d}</div><div class="lookup-context">'
+            f'<div class="lookup-context-label">Context</div><div class="lookup-context-text">"{hl}"</div></div>'
+            f'<div class="lookup-translation">{zh}</div>{ssnd}</div></div>')
+    return [f"{slug(show)}-{ep.lower()}-{slug(word)}", word, plain(s), front, back]
 
 
-def build_csv(show, ep, entries, with_audio=frozenset()):
-    buf = io.StringIO()
-    buf.write("#separator:Comma\n#html:true\n#notetype:Wordwise\n"
-              f"#deck:追劇英語::{show}::{ep}\n"
-              "#columns:Key,Word,Context,FrontContext,Back,BackDefOnly,Reverse\n")
-    w = csv.writer(buf, quoting=csv.QUOTE_ALL, lineterminator="\n")
+def build_package(show, ep, entries, with_audio, media_dir):
+    import genanki
+    anki = SKILL_DIR / "anki"
+    model = genanki.Model(
+        MODEL_ID, MODEL_NAME,
+        fields=[{"name": n} for n in FIELDS],
+        templates=[{"name": "Card 1",
+                    "qfmt": (anki / "front.html").read_text(encoding="utf-8"),
+                    "afmt": (anki / "back.html").read_text(encoding="utf-8")}],
+        css=(anki / "style.css").read_text(encoding="utf-8"),
+        sort_field_index=1,
+    )
+    deck_name = f"追劇英語::{show}::{ep}"
+    deck = genanki.Deck(int(hashlib.md5(deck_name.encode()).hexdigest()[:8], 16) + (1 << 30), deck_name)
+    media = []
     for e in entries:
-        word, lv, d, s, zh = (e[k] for k in REQUIRED)
-        hl = mark(s)
-        wf, sf = audio_names(show, ep, word)
-        wsnd = f"[sound:{wf}]" if word in with_audio else ""
-        ssnd = f'<div class="lookup-audio">[sound:{sf}]</div>' if word in with_audio else ""
-        front = (f'<div class="card-front"><div class="context-container"><div class="target-word-front">{word}</div>'
-                 f'<div class="context-text">"{hl}"</div></div>{wsnd}</div>')
-        back = (f'<div class="lookup-card"><div class="lookup-card-inner"><div class="lookup-header">'
-                f'<div class="lookup-word">{word}</div></div>'
-                f'<div class="lookup-meta"><span class="lookup-part-of-speech">{lv}</span></div>'
-                f'<div class="lookup-definition">{d}</div><div class="lookup-context">'
-                f'<div class="lookup-context-label">Context</div><div class="lookup-context-text">"{hl}"</div></div>'
-                f'<div class="lookup-translation">{zh}</div>{ssnd}</div></div>')
-        backdef = (f'<div class="lookup-card"><div class="lookup-card-inner"><div class="lookup-definition">{d}</div>'
-                   f'<div class="lookup-translation">{zh}</div></div></div>')
-        w.writerow([f"{slug(show)}-{ep.lower()}-{slug(word)}", word, plain(s), front, back, backdef, ""])
-    return buf.getvalue()
+        f = card_fields(show, ep, e, e["word"] in with_audio)
+        deck.add_note(genanki.Note(model=model, fields=f, guid=genanki.guid_for(f[0])))
+        if e["word"] in with_audio:
+            media += [str(media_dir / n) for n in audio_names(show, ep, e["word"])]
+    pkg = genanki.Package(deck)
+    pkg.media_files = media
+    return pkg
 
 
 def update_vocab(path, lines, learned, entries, today):
@@ -197,7 +216,7 @@ def update_vocab(path, lines, learned, entries, today):
     if not lines:
         head = ["---", 'title: "已學詞彙庫"', f"updated: {today}", "tags: [english, series-vocab-index]", "---",
                 "# 已學詞彙庫 (Learned Vocabulary)", "",
-                "> 此檔案由「追劇學英語」Skill 自動維護，用於跨集智慧去重。", ""]
+                "> 此檔案由 binge-vocab 自動維護，用於跨集智慧去重。", ""]
         text = "\n".join(head + [f"- {b}" for b in bullets]) + "\n"
     else:
         out, inserted = [], False
@@ -215,11 +234,20 @@ def update_vocab(path, lines, learned, entries, today):
     return len(bullets)
 
 
+def open_file(path):
+    cmd = {"darwin": ["open"], "win32": ["cmd", "/c", "start", ""]}.get(sys.platform, ["xdg-open"])
+    try:
+        subprocess.run([*cmd, str(path)], check=True)
+    except (OSError, subprocess.CalledProcessError):
+        print(f"無法自動開啟，請手動雙擊：{path}")
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("data")
     ap.add_argument("--dry-run", action="store_true", help="只檢查，不寫任何檔案")
     ap.add_argument("--no-audio", action="store_true", help="不產生發音音檔")
+    ap.add_argument("--open", action="store_true", help="產生後用系統預設程式開啟 .apkg（Anki 會跳出匯入視窗）")
     ap.add_argument("--notes-dir", help="覆寫 config.md 的 notes_dir")
     a = ap.parse_args()
 
@@ -243,20 +271,22 @@ def main():
         print("dry-run：未寫入任何檔案")
         return
 
+    ensure_deps(need_audio=not a.no_audio)
     today = datetime.date.today().isoformat()
     anki_dir = notes_dir / show / "Anki"
     anki_dir.mkdir(parents=True, exist_ok=True)
-    csv_path = anki_dir / f"anki-{slug(show)}-{ep.lower()}.csv"
+    media_dir = anki_dir / "media"
     with_audio = frozenset()
     if not a.no_audio:
-        media_dir = anki_dir / "media"
         with_audio = make_audio(show, ep, entries, media_dir)
-        print(f"音檔：{len(with_audio)}/{len(entries)} 個詞條完成（{media_dir}）")
-        install_media(media_dir)
-    csv_path.write_text(build_csv(show, ep, entries, with_audio), encoding="utf-8")
-    print(f"Anki CSV：{csv_path}")
+        print(f"音檔：{len(with_audio)}/{len(entries)} 個詞條完成")
+    apkg = anki_dir / f"{slug(show)}-{ep.lower()}.apkg"
+    build_package(show, ep, entries, with_audio, media_dir).write_to_file(str(apkg))
+    print(f"Anki 牌組檔：{apkg}")
     total = update_vocab(vocab_path, vlines, learned, entries, today)
     print(f"歷史詞庫：{vocab_path}（現有 {total} 個）")
+    if a.open:
+        open_file(apkg)
 
 
 if __name__ == "__main__":

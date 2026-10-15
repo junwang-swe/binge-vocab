@@ -1,11 +1,11 @@
 ---
 name: binge-vocab
-description: 追劇學英語 / Learn English vocabulary from TV series. 用戶給出劇名+集數（如「追劇學英語 Breaking Bad S02E03」），自動找該集字幕/劇本，提取約 30 個詞彙短語（自動比對歷史筆記排除重複單字，僅在出現全新語境/多義詞時收錄），生成 Anki 導入 CSV。觸發詞：「追劇學英語」「劇學英語」「series vocab」「learn english from」+ 劇名集數。僅處理英美劇單集，不處理 YouTube 影片或一般翻譯請求。
+description: 追劇學英語 / Learn English vocabulary from TV series. 用戶給出劇名+集數（如「追劇學英語 Breaking Bad S02E03」），自動找該集字幕/劇本，提取約 30 個詞彙短語（自動比對歷史筆記排除重複單字，僅在出現全新語境/多義詞時收錄），生成 Anki 牌組檔（.apkg）。觸發詞：「追劇學英語」「劇學英語」「series vocab」「learn english from」+ 劇名集數。僅處理英美劇單集，不處理 YouTube 影片或一般翻譯請求。
 ---
 
 # binge-vocab · 追劇學英語（含跨集/跨劇智慧去重）
 
-幫用戶從一集英美劇中高效提取詞彙，自動排除過去已學過的重複單字，輸出可直接匯入 Anki 的閃卡 CSV（含美音發音音檔）。
+幫用戶從一集英美劇中高效提取詞彙，自動排除過去已學過的重複單字，輸出單一 `.apkg` 牌組檔（卡片、樣式、美音發音音檔全包），雙擊即匯入 Anki。
 
 ---
 
@@ -146,9 +146,9 @@ curl -sL "https://www.springfieldspringfield.co.uk/view_episode_scripts.php?tv-s
 
 ---
 
-## 第三步：用腳本生成 Anki CSV 並更新詞庫（必走，禁止手寫 CSV）
+## 第三步：用腳本生成 Anki 牌組並更新詞庫（必走，禁止手寫卡片檔）
 
-CSV 的引號轉義、HTML 卡片排版、去重與詞庫更新全部交給 skill 目錄下的 `gen_csv.py`，不要自己手寫 CSV（容易寫壞引號導致 Anki 匯入失敗，格式也會在不同對話間漂移）。
+卡片 HTML、筆記類型、音檔打包、去重與詞庫更新全部交給 skill 目錄下的 `gen_deck.py`，不要自己手寫卡片檔（格式會在不同對話間漂移）。
 
 1. 把選好的詞條寫成 JSON 暫存檔（放在 scratchpad / 系統暫存目錄，不放進 skill 或詞彙庫）：
 
@@ -170,11 +170,11 @@ CSV 的引號轉義、HTML 卡片排版、去重與詞庫更新全部交給 skil
 2. 先檢查再寫入：
 
 ```bash
-python3 -I {skill_dir}/gen_csv.py data.json --dry-run   # 只檢查
-python3 -I {skill_dir}/gen_csv.py data.json             # 通過後寫入
+python3 -I {skill_dir}/gen_deck.py data.json --dry-run   # 只檢查
+python3 -I {skill_dir}/gen_deck.py data.json --open      # 通過後寫入，並自動開啟 Anki 匯入視窗
 ```
 
-腳本會：從 `config.md` 取 `{notes_dir}`；檢查重複詞、已學詞、缺 `**` 標記、同一原句重複（硬性錯誤，出錯就中止且不寫任何檔案）；對 C1 / 俚語超過上限、詞數偏離 `words_per_episode` 發出警告；產生美音發音音檔（gTTS，單字與原句各一個 mp3，存 `{notes_dir}/{劇名}/Anki/media/` 並複製進 Anki 的 `collection.media`；卡片不再放音標，正面自動播單字、背面自動播原句；個別音檔失敗只警告，該卡退回無音檔；`--no-audio` 可略過）；寫出 `{notes_dir}/{劇名}/Anki/anki-{劇名slug}-{SxxExx}.csv`（牌組檔頭為 `追劇英語::{劇名}::{SxxExx}`，欄位為 `Wordwise` 筆記類型的 7 欄，需先在 Anki 建立，見 README 的「安裝」）；把詞條（小寫）併入 `{notes_dir}/learned_vocab.md` 並更新 `updated:` 日期。
+腳本會：從 `config.md` 取 `{notes_dir}`；檢查重複詞、已學詞、缺 `**` 標記、同一原句重複（硬性錯誤，出錯就中止且不寫任何檔案）；對 C1 / 俚語超過上限、詞數偏離 `words_per_episode` 發出警告；產生美音發音音檔（gTTS，單字與原句各一個 mp3；正面自動播單字、背面自動播原句；個別音檔失敗只警告，該卡退回無音檔；`--no-audio` 可略過）；把筆記類型 `BingeVocab`、全部卡片與音檔打成 `{notes_dir}/{劇名}/Anki/{劇名slug}-{sxxexx}.apkg`（牌組 `追劇英語::{劇名}::{SxxExx}`，重複匯入會更新同一批卡片、保留複習進度）；`--open` 會用系統預設程式開啟該檔，Anki 自動跳出匯入視窗；把詞條（小寫）併入 `{notes_dir}/learned_vocab.md` 並更新 `updated:` 日期。
 
 ---
 
@@ -184,11 +184,11 @@ python3 -I {skill_dir}/gen_csv.py data.json             # 通過後寫入
 {劇名} {SxxExx} 詞彙提取完成
 
 共提取 {N} 個詞條（已自動比對歷史詞庫排除重複詞）
-Anki CSV：{notes_dir}/{劇名}/Anki/{csv文件名}
+Anki 牌組檔：{notes_dir}/{劇名}/Anki/{apkg檔名}
 歷史詞庫：已更新至 {notes_dir}/learned_vocab.md
 
-導入 Anki：File → Import → 選 CSV → Import 即可
-（牌組「追劇英語::{劇名}::{SxxExx}」和正反面映射已在文件頭設好，無需手動調整）
+匯入 Anki：已自動開啟 Anki 的匯入視窗，按「匯入」即可
+（牌組「追劇英語::{劇名}::{SxxExx}」、卡片樣式與音檔都已包在檔案裡，不用另外設定）
 
 建議：先花 10 分鐘過一遍詞彙，再看這集。
 ```
@@ -197,4 +197,4 @@ Anki CSV：{notes_dir}/{劇名}/Anki/{csv文件名}
 
 ## 版權邊界
 
-字幕/劇本內容來自公開網頁，僅供用戶個人學習使用；不要把整集劇本原文寫入產出檔案（CSV 裡只保留選出的例句）。
+字幕/劇本內容來自公開網頁，僅供用戶個人學習使用；不要把整集劇本原文寫入產出檔案（牌組檔裡只保留選出的例句）。
