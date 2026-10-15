@@ -26,7 +26,7 @@
 mark { background: #fef3c7; color: inherit; padding: 0; border-bottom: 2px solid #fde047; }
 
 /* 背面 */
-.lookup-card { padding: 20px; line-height: 1.6; }
+.lookup-card { padding: 24px 20px; line-height: 1.6; text-align: center; }
 .lookup-header { margin-bottom: 5px; border-bottom: 1px solid #000; }
 .lookup-word { display: inline-block; font-size: 36px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.1; margin-bottom: 4px; background: #fef3c7; border-bottom: 2px solid #fde047; color: #000; }
 .lookup-part-of-speech { font-size: 13px; font-style: italic; text-transform: lowercase; }
@@ -38,7 +38,8 @@ mark { background: #fef3c7; color: inherit; padding: 0; border-bottom: 2px solid
 
 /* 發音按鈕：Anki 內建 [sound:] 改成簡約空心三角形 */
 .replay-button { display: inline-block; vertical-align: middle; }
-.replay-button svg { width: 18px; height: 18px; }
+.replay-button svg { width: 34px; height: 34px; }
 .replay-button svg circle { fill: transparent; stroke: transparent; }
 .replay-button svg path { fill: transparent; stroke: #666; stroke-width: 4; stroke-linejoin: round; }
-.lookup-audio { margin-top: 6px; }
+.lookup-audio { margin-top: 12px; }
+.card-front .replay-button { margin-top: 12px; }
