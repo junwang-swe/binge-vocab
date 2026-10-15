@@ -18,7 +18,7 @@
 對你的 AI 貼上這段，它會安裝、問你幾個問題，然後直接帶你跑第一集，不用重開：
 
 ```
-請幫我安裝並開始使用這個英文學習 skill：https://github.com/heartwar9420/binge-vocab
+請幫我安裝並開始使用這個英文學習 skill：https://github.com/junwang-swe/binge-vocab
 請照 README 的「給 AI 的安裝指引」做：先問我英文程度等設定，裝好後不要叫我重開，直接問我想學哪部劇的哪一集。
 ```
 
@@ -41,7 +41,7 @@
 <summary>想自己手動安裝</summary>
 
 ```bash
-git clone https://github.com/heartwar9420/binge-vocab.git ~/.claude/skills/binge-vocab
+git clone https://github.com/junwang-swe/binge-vocab.git ~/.claude/skills/binge-vocab
 cd ~/.claude/skills/binge-vocab
 python3 setup.py --notes-dir ~/Documents/series-vocab/ --set level=B1 --set slang=few
 ```
