@@ -41,6 +41,9 @@ REQUIRED = ("word", "level", "def", "sentence", "zh")
 FIELDS = ["Key", "Word", "Context", "FrontContext", "Back"]
 MODEL_ID = 1760283519001  # 固定值：重複匯入時 Anki 認得是同一個筆記類型
 MODEL_NAME = "BingeVocab"
+# 依程度 / 俚語偏好換算每集上限（config.md 可用 c1_max_per_episode、slang_max_per_episode 直接覆寫）
+LEVEL_C1_CAP = {"A2": 0, "B1": 2, "B2": 6, "C1": 99}
+SLANG_CAP = {"none": 0, "few": 3, "many": 8}
 
 
 def ensure_deps(need_audio):
@@ -122,8 +125,8 @@ def validate(entries, learned, cfg):
     c1 = sum(1 for e in entries if re.search(r"\bC[12]\b", e.get("level", "")))
     slang = sum(1 for e in entries if "俚語" in e.get("level", ""))
     tgt = int(cfg.get("words_per_episode", 30))
-    c1_max = int(cfg.get("c1_max_per_episode", 3))
-    slang_max = int(cfg.get("slang_max_per_episode", 3))
+    c1_max = int(cfg["c1_max_per_episode"]) if "c1_max_per_episode" in cfg else LEVEL_C1_CAP.get(cfg.get("level", "").upper(), 3)
+    slang_max = int(cfg["slang_max_per_episode"]) if "slang_max_per_episode" in cfg else SLANG_CAP.get(cfg.get("slang", "").lower(), 3)
     if c1 > c1_max:
         warns.append(f"C1 以上共 {c1} 個，超過上限 {c1_max}")
     if slang > slang_max:

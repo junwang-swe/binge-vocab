@@ -6,6 +6,7 @@
 
 - --notes-dir：詞庫與牌組檔的存放位置（寫進 config.md），預設 ~/Documents/series-vocab/
 - --no-audio：只裝 genanki，不裝 gTTS（不要發音音檔時用）
+- --set KEY=VALUE：寫入或更新 config.md 的欄位，可重複（例如 --set level=B2 --set slang=none）
 - --venv：自訂 venv 位置（預設 ~/.local/share/binge-vocab/venv；自訂時要設環境變數 BINGE_PYTHON 指向該 python）
 """
 import argparse
@@ -33,6 +34,7 @@ def run(cmd):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--notes-dir")
+    ap.add_argument("--set", action="append", default=[], metavar="KEY=VALUE")
     ap.add_argument("--no-audio", action="store_true")
     ap.add_argument("--venv", default=str(DEFAULT_VENV))
     a = ap.parse_args()
@@ -56,6 +58,14 @@ def main():
     if a.notes_dir:
         text = cfg.read_text(encoding="utf-8")
         text = re.sub(r"^notes_dir:.*$", lambda _: f"notes_dir: {a.notes_dir}", text, flags=re.M)
+        cfg.write_text(text, encoding="utf-8")
+    for kv in a.set:
+        k, _, v = kv.partition("=")
+        text = cfg.read_text(encoding="utf-8")
+        if re.search(rf"^{re.escape(k)}:", text, re.M):
+            text = re.sub(rf"^{re.escape(k)}:.*$", lambda _: f"{k}: {v}", text, flags=re.M)
+        else:
+            text = text.rstrip("\n") + f"\n{k}: {v}\n"
         cfg.write_text(text, encoding="utf-8")
     m = re.search(r"^notes_dir:\s*(.+?)\s*$", cfg.read_text(encoding="utf-8"), re.M)
     notes_dir = Path(m.group(1)).expanduser()

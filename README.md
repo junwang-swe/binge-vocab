@@ -85,10 +85,11 @@ AI 會依序：
 |---|---|---|
 | `notes_dir` | `~/Documents/series-vocab/` | 詞庫與牌組檔存放位置，Obsidian 用戶可填 vault 內路徑 |
 | `native_language` | 繁體中文 | 釋義與譯文語言 |
+| `level` | B1 | 你的英文程度：A2 入門 / B1 中級 / B2 中高級 / C1 進階；選詞難度會略高於此 |
+| `slang` | few | 俚語：`none` 不要 / `few` 少量 / `many` 多一點 |
 | `words_per_episode` | 30 | 每集詞數 |
-| `reading_level` / `listening_level` | A2-B1 / B1-B2 | 你的程度，選詞難度略高於此 |
-| `c1_max_per_episode` | 3 | 每集 C1 以上詞數上限 |
-| `slang_max_per_episode` | 3 | 每集俚語上限 |
+
+第一次使用時 AI 會用白話問你這些，之後隨時可以對它說「我程度變好了」「不要俚語」「每集改 20 個」，它會幫你改。進階用戶可在 `config.md` 加 `c1_max_per_episode`、`slang_max_per_episode` 直接覆寫換算結果。
 
 ## 常見問題
 

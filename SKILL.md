@@ -13,29 +13,37 @@ description: 追劇學英語 / Learn English vocabulary from TV series. 用戶�
 
 觸發時先檢查：skill 目錄下是否有 `config.md`，且 `~/.local/share/binge-vocab/venv` 存在。任一不存在就是第一次使用，**由你直接完成安裝，不要叫用戶自己下指令**：
 
-1. 問用戶一件事：資料要存哪個資料夾（詞庫與牌組檔）。用戶沒意見就用預設 `~/Documents/series-vocab/`；Obsidian 用戶可填 vault 內的路徑。
-2. 執行（`{skill_dir}` 為本檔所在目錄）：
+1. 用白話問用戶四個問題（一次問完，每題都附預設；用戶說「都用預設」就全用預設）：
+   - **資料存哪個資料夾**（詞庫與牌組檔）。預設 `~/Documents/series-vocab/`；Obsidian 用戶可填 vault 內的路徑。
+   - **釋義與譯文用什麼語言**。預設繁體中文。
+   - **目前的英文程度**，讓用戶用自己的話選，不要問 CEFR 代號：
+     - 剛入門，只看得懂簡單句子 → `A2`
+     - 中級，日常對話大致能懂，看劇要靠字幕 → `B1`（預設）
+     - 中高級，看劇多半聽得懂，想補表達與習語 → `B2`
+     - 進階，想學道地用法與細微差異 → `C1`
+   - **想不想學俚語/粗話**（只用於「聽得懂」）：不要 → `none`；少量 → `few`（預設）；多一點 → `many`。
+   - （選配）**每集想學幾個詞**，預設 30。
+2. 執行（`{skill_dir}` 為本檔所在目錄），把答案帶進參數：
 
 ```bash
-python3 {skill_dir}/setup.py --notes-dir <用戶選的資料夾>
+python3 {skill_dir}/setup.py --notes-dir <資料夾> --set native_language=<語言> --set level=<A2|B1|B2|C1> --set slang=<none|few|many> --set words_per_episode=<數字>
 ```
 
 它會建立 venv、安裝 genanki 與 gTTS、產生 `config.md`、建立資料夾並自我檢查。失敗時把錯誤原因用白話告訴用戶並處理（例如沒有 Python 3 就請用戶先安裝），不要丟一串英文錯誤就結束。
 3. 提醒用戶一次：還沒安裝 Anki 的話，請先到 https://apps.ankiweb.net/ 下載。
+4. 告訴用戶之後隨時可以說「我程度變好了」「不要俚語」「每集改成 20 個」，你就更新 `config.md`（直接改對應那一行，或再跑一次 `setup.py --set ...`）。
 
-`config.md` 可調整的欄位（皆有預設值）：
+`config.md` 欄位（皆有預設值）：
 
 ```markdown
 notes_dir: ~/Documents/series-vocab/
 native_language: 繁體中文
+level: B1            # A2 / B1 / B2 / C1
+slang: few           # none / few / many
 words_per_episode: 30
-reading_level: A2-B1
-listening_level: B1-B2
-c1_max_per_episode: 3
-slang_max_per_episode: 3
 ```
 
-程度與上限欄位為選填，缺少時以 B1-B2 為主、C1 與俚語各上限 3 個處理。
+進階用戶可再加 `c1_max_per_episode`、`slang_max_per_episode` 直接覆寫換算結果。
 
 ---
 
@@ -132,14 +140,22 @@ curl -sL "https://www.springfieldspringfield.co.uk/view_episode_scripts.php?tv-s
 3. **俚語/口語**：字典查不到準確語境的詞
 4. **B1-B2 級實用詞彙**：跳過 hello、sorry 等基礎詞，但真實場景高頻出現
 
-### 3. 難度與時效過濾（依 `config.md` 的程度設定）
+### 3. 難度與時效過濾（依 `config.md` 的 `level`、`slang`）
 
-目標程度取自 `config.md`（`reading_level` / `listening_level`）；詞彙難度以略高於用戶現有程度（i+1）為準。
+詞彙難度以略高於用戶現有程度（i+1）為準，依 `level` 換算：
 
-- **難度比例**：以 B1-B2 為主（約八成）；A2 只收實用的短語動詞和習語；**C1 每集上限 `c1_max_per_episode`（預設 3）**，只收高頻詞；C2 一律不收。
+| level | 主要難度（約八成） | 可少量收 | 每集 C1 以上上限 |
+|---|---|---|---|
+| A2 | A2-B1 | B1 以上只收高頻實用短語 | 0 |
+| B1（預設） | B1-B2 | A2 只收實用短語動詞和習語 | 2 |
+| B2 | B2-C1 | B1 只收容易誤用的習語 | 6 |
+| C1 | C1 | C2 只收高頻、道地的用法 | 不限 |
+
+沒有 `level` 時當作 B1-B2 為主、C1 上限 3。`config.md` 有 `c1_max_per_episode` 時以它為準。
+
 - **過時俚語一律不收**：例如 80 年代用語（totally tubular、bitchin'）、老派戲謔語（ladies and germs）、過時或帶冒犯意味的說法（loony bin、spazzy）、地區性老說法（pollywog 這類有標準詞 tadpole 的）。判斷標準：現代母語者日常是否還會自然使用。
-- **現代仍在用的粗話/俚語**：可收，每集上限 `slang_max_per_episode`（預設 3），標 `[Slang 俚語]`，用於「聽得懂」，不鼓勵主動使用。
-- **數量補足**：被過濾後不足 `words_per_episode` 時，從 B1-B2 詞彙補滿，不要用 C1 湊數。
+- **現代仍在用的粗話/俚語**：依 `slang` 決定每集上限（`none`=0、`few`=3、`many`=8；沒設定時為 3；`slang_max_per_episode` 可覆寫），標 `[Slang 俚語]`，用於「聽得懂」，不鼓勵主動使用。
+- **數量補足**：被過濾後不足 `words_per_episode` 時，從主要難度的詞彙補滿，不要用超出程度的詞湊數。
 - **難度標籤是估計**：俚語/習語沒有官方 CEFR 分級，標籤為模型判斷，非字典正式分級。
 
 每個詞條格式：
