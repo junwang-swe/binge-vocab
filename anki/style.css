@@ -1,0 +1,35 @@
+.card {
+  font-family: -apple-system, "Helvetica Neue", "PingFang TC", "Noto Sans TC", sans-serif;
+  font-size: 20px;
+  line-height: 1.5;
+  text-align: left;
+  color: #1f2328;
+  background: #ffffff;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 12px;
+}
+.nightMode .card, .night_mode .card { color: #e6e6e6; background: #1e1e1e; }
+
+mark { background: #fff3a3; color: inherit; padding: 0 3px; border-radius: 3px; }
+.nightMode mark, .night_mode mark { background: #6b5d00; color: #fff; }
+
+hr#answer { border: 0; border-top: 1px solid #d0d7de; margin: 16px 0; }
+.nightMode hr#answer, .night_mode hr#answer { border-top-color: #444; }
+
+/* 正面：單字 + 原句 */
+.target-word-front { font-size: 1.7em; font-weight: 700; margin-bottom: 8px; }
+.context-text { font-size: 0.95em; color: #57606a; font-style: italic; }
+.nightMode .context-text, .night_mode .context-text { color: #aaa; }
+
+/* 背面：詞性/難度、釋義、原句、翻譯 */
+.lookup-word { font-size: 1.5em; font-weight: 700; }
+.lookup-meta { margin: 2px 0 8px; }
+.lookup-part-of-speech { display: inline-block; font-size: 0.75em; color: #57606a; border: 1px solid #d0d7de; border-radius: 10px; padding: 0 8px; }
+.nightMode .lookup-part-of-speech, .night_mode .lookup-part-of-speech { color: #aaa; border-color: #555; }
+.lookup-definition { font-size: 1.1em; margin: 6px 0; }
+.lookup-context { margin-top: 12px; }
+.lookup-context-label { font-size: 0.7em; letter-spacing: 0.08em; text-transform: uppercase; color: #8c959f; }
+.lookup-context-text { font-style: italic; }
+.lookup-translation { margin-top: 8px; color: #57606a; }
+.nightMode .lookup-translation, .night_mode .lookup-translation { color: #aaa; }
