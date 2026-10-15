@@ -14,7 +14,7 @@
 然後對你的 AI 說這一句，它會自己完成全部安裝：
 
 ```
-請幫我安裝這個英文學習 skill：<本 repo 網址>
+請幫我安裝這個英文學習 skill：https://github.com/heartwar9420/binge-vocab
 把它放進你的 skills 目錄，然後執行裡面的 setup.py 完成設定。
 ```
 
@@ -24,7 +24,7 @@ AI 會下載、安裝套件、建立設定檔，並問你資料要存在哪裡�
 <summary>想自己手動安裝</summary>
 
 ```bash
-git clone <本 repo 網址> ~/.claude/skills/binge-vocab
+git clone https://github.com/heartwar9420/binge-vocab ~/.claude/skills/binge-vocab
 cd ~/.claude/skills/binge-vocab
 python3 setup.py --notes-dir ~/Documents/series-vocab/
 ```
