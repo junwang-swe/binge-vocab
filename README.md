@@ -1,4 +1,4 @@
-# gbro-series-vocab · 追劇學英語
+# binge-vocab · 追劇學英語
 
 給劇名 + 集數，AI 自動找該集字幕，挑出約 30 個值得學的詞彙短語（短語動詞、習語、B1-B2 實用詞、少量俚語），產出可直接匯入 Anki 的 CSV，並附美音發音音檔。學過的詞會記進詞庫，跨集、跨劇自動去重。
 
@@ -11,8 +11,8 @@
 1. 下載到 skill 目錄：
 
    ```bash
-   git clone <本 repo 網址> ~/.claude/skills/gbro-series-vocab
-   cd ~/.claude/skills/gbro-series-vocab
+   git clone <本 repo 網址> ~/.claude/skills/binge-vocab
+   cd ~/.claude/skills/binge-vocab
    cp config.example.md config.md
    ```
 
@@ -21,8 +21,8 @@
 3. 發音音檔需要 gTTS（不想要音檔可跳過，產生時加 `--no-audio`）：
 
    ```bash
-   python3 -m venv ~/.local/share/gbro-series-vocab/venv
-   ~/.local/share/gbro-series-vocab/venv/bin/pip install gTTS
+   python3 -m venv ~/.local/share/binge-vocab/venv
+   ~/.local/share/binge-vocab/venv/bin/pip install gTTS
    ```
 
 4. 在 Anki 匯入筆記類型：開 Anki → 檔案 → 匯入 → 選 `anki/wordwise-notetype.apkg`。

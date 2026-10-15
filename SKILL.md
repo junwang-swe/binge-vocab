@@ -1,9 +1,9 @@
 ---
-name: gbro-series-vocab
+name: binge-vocab
 description: 追劇學英語 / Learn English vocabulary from TV series. 用戶給出劇名+集數（如「追劇學英語 Breaking Bad S02E03」），自動找該集字幕/劇本，提取約 30 個詞彙短語（自動比對歷史筆記排除重複單字，僅在出現全新語境/多義詞時收錄），生成 Anki 導入 CSV。觸發詞：「追劇學英語」「劇學英語」「series vocab」「learn english from」+ 劇名集數。僅處理英美劇單集，不處理 YouTube 影片或一般翻譯請求。
 ---
 
-# gbro-series-vocab · 追劇學英語（含跨集/跨劇智慧去重）
+# binge-vocab · 追劇學英語（含跨集/跨劇智慧去重）
 
 幫用戶從一集英美劇中高效提取詞彙，自動排除過去已學過的重複單字，輸出可直接匯入 Anki 的閃卡 CSV（含美音發音音檔）。
 

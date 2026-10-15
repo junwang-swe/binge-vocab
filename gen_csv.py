@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""gbro-series-vocab 產生器：詞條 JSON -> Anki 匯入 CSV（含發音音檔）並更新 learned_vocab.md。
+"""binge-vocab 產生器：詞條 JSON -> Anki 匯入 CSV（含發音音檔）並更新 learned_vocab.md。
 
 用法：
     python3 -I gen_csv.py DATA.json [--dry-run] [--notes-dir DIR]
@@ -33,7 +33,7 @@ from pathlib import Path
 
 SKILL_DIR = Path(__file__).resolve().parent
 REQUIRED = ("word", "level", "def", "sentence", "zh")
-TTS_PY = Path(os.environ.get("GBRO_TTS_PYTHON") or Path.home() / ".local/share/gbro-series-vocab/venv/bin/python")
+TTS_PY = Path(os.environ.get("BINGE_TTS_PYTHON") or Path.home() / ".local/share/binge-vocab/venv/bin/python")
 ANKI_MEDIA_GLOBS = (
     "Library/Application Support/Anki2/*/collection.media",  # macOS
     ".local/share/Anki2/*/collection.media",  # Linux
@@ -125,8 +125,8 @@ def tts(text, out):
     if out.exists() and out.stat().st_size > 0:
         return True
     if not TTS_PY.exists():
-        sys.exit(f"找不到 gTTS 環境：{TTS_PY}。請 python3 -m venv ~/.local/share/gbro-series-vocab/venv && "
-                 "~/.local/share/gbro-series-vocab/venv/bin/pip install gTTS，或用 GBRO_TTS_PYTHON 指定已裝 gTTS 的 python，或加 --no-audio")
+        sys.exit(f"找不到 gTTS 環境：{TTS_PY}。請 python3 -m venv ~/.local/share/binge-vocab/venv && "
+                 "~/.local/share/binge-vocab/venv/bin/pip install gTTS，或用 BINGE_TTS_PYTHON 指定已裝 gTTS 的 python，或加 --no-audio")
     code = "import sys; from gtts import gTTS; gTTS(sys.argv[1], lang='en', tld='com').save(sys.argv[2])"
     for wait in (0, 20, 60, 120):
         time.sleep(wait)
@@ -153,7 +153,7 @@ def make_audio(show, ep, entries, media_dir):
 
 def install_media(media_dir):
     """把 mp3 複製進 Anki 的 collection.media；找不到 profile 就提示手動複製。"""
-    override = os.environ.get("GBRO_ANKI_MEDIA")
+    override = os.environ.get("BINGE_ANKI_MEDIA")
     dests = [Path(override)] if override else [d for g in ANKI_MEDIA_GLOBS for d in Path.home().glob(g)]
     if len(dests) != 1:
         print(f"未能唯一定位 Anki collection.media（找到 {len(dests)} 個），請手動把 {media_dir} 內的 mp3 複製進去")
