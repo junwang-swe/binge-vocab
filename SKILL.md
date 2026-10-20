@@ -164,10 +164,14 @@ curl -sL "https://www.springfieldspringfield.co.uk/view_episode_scripts.php?tv-s
 
 每個詞條格式：
 ```
-序號. 詞/短語 | CEFR難度標籤 | 釋義（用戶母語） | 原句（原句中的目標詞加粗） | 原句譯文（用戶母語）
+序號. 詞/短語 | CEFR難度標籤 | 釋義（用戶母語） | 原句（原句中的目標詞加粗） | 原句譯文（用戶母語） | 記憶錨點（字根/來源，選填）
 ```
 - **難度標籤**：標註 CEFR 難度或類型，如 `[A2]`, `[B1]`, `[B2]`, `[C1]`, `[B2 習語]`, `[Slang 俚語]`。
 - **原句規則**：直接從劇本中找原句，原句中的目標單字片語需以 `**` 加粗，以配合 Obsidian 螢光高亮樣式。
+- **記憶錨點（Memory Hook，選填）**：
+  - **單字**：若有清晰的拉丁/希臘字首字根，進行拆解（如 `` `inter-` (之間) + `cept` (抓) → 在半路抓過來 → 攔截 ``）。
+  - **片語/習語**：若有具體由來或畫面感，寫出 1 句話典故由來（如「像水晶般純淨透光，引申為極其清楚」）。
+  - **約束**：長度限制在 35 字以內；日常基礎詞或無可考來源的片語**留空不寫**，絕不硬掰。
 
 **例句規則**：直接從劇本中找原句，不要自己造句。
 
@@ -184,14 +188,29 @@ curl -sL "https://www.springfieldspringfield.co.uk/view_episode_scripts.php?tv-s
   "show": "Stranger Things",
   "episode": "S02E10",
   "entries": [
-    {"word": "under attack", "level": "B2",
-     "def": "遭受攻擊", "sentence": "We're **under attack**.", "zh": "我們遭到攻擊了。"}
+    {
+      "word": "crystal clear",
+      "level": "B2 習語",
+      "def": "清楚明白、毫無疑義",
+      "sentence": "I'd like to make one thing **crystal clear**.",
+      "zh": "我想把一件事講得清清楚楚。",
+      "hook": "像水晶般純淨透光、一覽無遺，引申為事情毫無隱瞞、清清楚楚。"
+    },
+    {
+      "word": "intercept",
+      "level": "B2",
+      "def": "攔截",
+      "sentence": "I **intercepted** a secret communication.",
+      "zh": "我攔截了一段秘密通訊。",
+      "hook": "`inter-` (在...之間) + `cept` (抓取、拿) → 在半路上抓過來 → 攔截。"
+    }
   ]
 }
 ```
 
 - `sentence` 內目標詞用 `**` 包起來（腳本轉成 `<mark>` 螢光標示）；原句取自劇本，一句只收一條。
 - `level` 用第二步的標籤（`B1`、`B2 習語`、`C1`、`Slang 俚語` 等）。
+- `hook` 為記憶錨點（字根拆解或片語由來，選填，無適合來源時省略該欄位）。
 - 詞已在 `learned_vocab.md` 但確屬新語境/新用法時，才在該詞條加 `"new_context": true`。
 
 2. 先檢查再寫入：

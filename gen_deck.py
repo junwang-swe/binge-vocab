@@ -184,12 +184,19 @@ def card_fields(show, ep, e, has_audio):
     ssnd = f'<div class="lookup-audio">[sound:{sf}]</div>' if has_audio else ""
     front = (f'<div class="card-front"><div class="context-container"><div class="target-word-front">{word}</div>'
              f'<div class="context-text">"{hl}"</div></div>{wsnd}</div>')
+    hook = str(e.get("hook") or e.get("origin") or e.get("etymology") or "").strip()
+    if hook:
+        hook_fmt = re.sub(r"`([^`]+)`", r"<code>\1</code>", hook)
+        hook_sec = (f'<div class="lookup-hook"><div class="lookup-hook-label">Memory Hook</div>'
+                    f'<div class="lookup-hook-text">{hook_fmt}</div></div>')
+    else:
+        hook_sec = ""
     back = (f'<div class="lookup-card"><div class="lookup-card-inner"><div class="lookup-header">'
             f'<div class="lookup-word">{word}</div></div>'
             f'<div class="lookup-meta"><span class="lookup-part-of-speech">{lv}</span></div>'
             f'<div class="lookup-definition">{d}</div><div class="lookup-context">'
             f'<div class="lookup-context-label">Context</div><div class="lookup-context-text">"{hl}"</div></div>'
-            f'<div class="lookup-translation">{zh}</div>{ssnd}</div></div>')
+            f'<div class="lookup-translation">{zh}</div>{ssnd}{hook_sec}</div></div>')
     return [f"{slug(show)}-{ep.lower()}-{slug(word)}", word, plain(s), front, back]
 
 

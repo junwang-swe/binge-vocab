@@ -56,3 +56,31 @@ mark { background: #fef3c7; color: inherit; padding: 0; border: none; border-bot
 .replay-button svg circle { fill: transparent; stroke: transparent; }
 .replay-button svg path { fill: transparent; stroke: #666; stroke-width: 4; stroke-linejoin: round; transition: stroke 0.15s ease; }
 .replay-button:hover svg path { stroke: #000; }
+
+/* 記憶錨點 Memory Hook（字根拆解 / 片語典故） */
+.lookup-hook {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px dashed rgba(0, 0, 0, 0.12);
+}
+.lookup-hook-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #777;
+  margin-bottom: 5px;
+}
+.lookup-hook-text {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: #333;
+}
+.lookup-hook-text code {
+  font-family: inherit;
+  background: #f3f2ee;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-weight: 600;
+  color: #111;
+}
