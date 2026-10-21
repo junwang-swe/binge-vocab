@@ -57,7 +57,14 @@ mark { background: #fef3c7; color: inherit; padding: 0; border: none; border-bot
 .replay-button svg path { fill: transparent; stroke: #666; stroke-width: 4; stroke-linejoin: round; transition: stroke 0.15s ease; }
 .replay-button:hover svg path { stroke: #000; }
 
-/* 記憶錨點 Memory Hook（字根拆解 / 片語典故） */
+/* 記憶錨點 Memory Hook（字根拆解 / 分字解釋 / 關鍵字說明 / 常見搭配） */
+.lookup-hook-text ul {
+  margin: 6px 0 0;
+  padding-left: 20px;
+}
+.lookup-hook-text li {
+  margin: 2px 0;
+}
 .lookup-hook {
   margin-top: 16px;
   padding-top: 12px;

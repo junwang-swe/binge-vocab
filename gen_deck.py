@@ -94,6 +94,24 @@ def mark(s):
     return re.sub(r"\*\*(.+?)\*\*", r"<mark>\1</mark>", s)
 
 
+def format_hook(hook):
+    """記憶錨點轉 HTML：反引號 → <code>；以 "- " 開頭的行 → 項目清單；其餘行以 <br> 連接。"""
+    out, items = [], []
+    def flush():
+        if items:
+            out.append("<ul>" + "".join(f"<li>{i}</li>" for i in items) + "</ul>")
+            items.clear()
+    for line in hook.split("\n"):
+        line = re.sub(r"`([^`]+)`", r"<code>\1</code>", line.strip())
+        if line.startswith("- "):
+            items.append(line[2:])
+        elif line:
+            flush()
+            out.append(line + "<br>")
+    flush()
+    return "".join(out).removesuffix("<br>")
+
+
 def load_learned(path):
     if not path.exists():
         return set(), []
@@ -186,7 +204,7 @@ def card_fields(show, ep, e, has_audio):
              f'<div class="context-text">"{hl}"</div></div>{wsnd}</div>')
     hook = str(e.get("hook") or e.get("origin") or e.get("etymology") or "").strip()
     if hook:
-        hook_fmt = re.sub(r"`([^`]+)`", r"<code>\1</code>", hook)
+        hook_fmt = format_hook(hook)
         hook_sec = (f'<div class="lookup-hook"><div class="lookup-hook-label">Memory Hook</div>'
                     f'<div class="lookup-hook-text">{hook_fmt}</div></div>')
     else:
